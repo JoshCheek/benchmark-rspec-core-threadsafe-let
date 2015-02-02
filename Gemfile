@@ -1,9 +1,8 @@
 source 'https://rubygems.org'
 
-if ENV['THREADSAFE_RSPEC']
-  gem 'rspec-core',
-    git: 'git@github.com:JoshCheek/rspec-core.git',
-    branch: 'threadsafe-let-block'
-end
-
-gem 'rspec', '~> 3.0'
+gem 'rspec',                path: 'rspec'
+gem 'rspec-core',           path: 'rspec-core'
+gem 'rspec-expectations',   path: 'rspec-expectations'
+gem 'rspec-mocks',          path: 'rspec-mocks'
+gem 'rspec-rails',          path: 'rspec-rails'
+gem 'rspec-support',        path: 'rspec-support'

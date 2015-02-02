@@ -4,6 +4,8 @@ module RSpec
   module Core
     module Formatters
       class QuietFormatter < BaseTextFormatter
+        TIME_FILE = ENV.fetch 'TIME_FILE'
+
         Formatters.register self,
                             :example_group_started,
                             :example_passed
@@ -28,6 +30,13 @@ module RSpec
           @num_passed += 1
           @num_passed % 100 == 0 || @num_passed == @num_total and
             output.print "\r#{100*@num_passed/@num_total}%"
+        end
+
+        def dump_summary(summary)
+          super
+          File.open TIME_FILE, 'a' do |file|
+            file.puts summary.duration
+          end
         end
       end
     end

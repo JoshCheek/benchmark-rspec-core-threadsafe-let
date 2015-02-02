@@ -9,3 +9,10 @@ spec.rb
 8_spec.rb
 9_spec.rb
 10_spec.rb
+rspec-core
+rspec-expectations
+rspec-mocks
+rspec-rails
+rspec-support
+rspec
+spec_times
