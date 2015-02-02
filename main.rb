@@ -22,8 +22,15 @@ def cd(dirname, &block)
   print_command ['cd', orig_dir]
 end
 
+def run_specs(specfile)
+  run 'ruby', '-I', 'rspec-core/lib', 'rspec-core/exe/rspec',
+              '-r', './quiet_formatter.rb',
+              '-f', 'RSpec::Core::Formatters::QuietFormatter',
+              specfile
+end
+
 n          = (ARGV.first || '7').to_i
-filename   = "#{n}_spec.rb"
+specfile   = "#{n}_spec.rb"
 time_file  = File.expand_path '../spec_times', __FILE__
 master_sha = nil
 thread_sha = nil
@@ -55,8 +62,8 @@ end
 
 
 title "Generating specs n=#{n} -- protip: Not worth going higher than 8"
-run ["time", "ruby", "generate.rb", n.to_s, filename]
-run 'wc', '-l', filename
+run ["time", "ruby", "generate.rb", n.to_s, specfile]
+run 'wc', '-l', specfile
 
 
 
@@ -66,10 +73,7 @@ run 'bundle', 'install'
 
 
 title "Running specs against merge base"
-run 'ruby', '-I', 'rspec-core/lib', 'rspec-core/exe/rspec',
-            '-r', './quiet_formatter.rb',
-            '-f', 'RSpec::Core::Formatters::QuietFormatter',
-            "#{n}_spec.rb"
+run_specs specfile
 
 
 
@@ -82,20 +86,39 @@ run 'bundle', 'install'
 
 
 title "Running specs"
-run 'ruby', '-I', 'rspec-core/lib', 'rspec-core/exe/rspec',
-            '-r', './quiet_formatter.rb',
-            '-f', 'RSpec::Core::Formatters::QuietFormatter',
-            "#{n}_spec.rb"
+run_specs specfile
 
 
 title 'Stats'
-lines = File.readlines(filename)
-normal, threadsafe, *times = File.readlines(time_file).map(&:to_f)
-raise unless times.empty?
+*old_results, normal, threadsafe = File.readlines(time_file).map(&:to_f)
 puts "Depth:             \e[36m#{n}\e[39m"
 puts "Normal:            \e[36m#{normal}\e[39m"
 puts "Threadsafe:        \e[36m#{threadsafe}\e[39m"
 puts "Difference:        \e[36m#{threadsafe - normal}\e[39m"
-puts "Num lines in test: \e[36m#{lines.count}\e[39m"
-puts "Num specs:         \e[36m#{lines.grep(/example/).count}\e[39m"
-puts "Num let blocks:    \e[36m#{lines.grep(/let/).count}\e[39m"
+
+run 'du', '-h', specfile
+run 'wc', '-l', specfile
+run 'grep', '-c', 'example', specfile
+run 'grep', '-c', 'let', specfile
+
+
+title 'Running 9 more times (10 total)'
+10.times do |i|
+  puts "----- #{i} -----"
+
+  %x[git -C rspec-core checkout #{master_sha}]
+  run_specs specfile
+
+  %x[git -C rspec-core checkout #{thread_sha}]
+  run_specs specfile
+end
+
+master_times, threadsafe_times = File.readlines('spec_times').map(&:to_f).each_slice(2).to_a.transpose
+
+mavg = master_times.inject(:+) / master_times.count
+tavg = threadsafe_times.inject(:+) / threadsafe_times.count
+tavg - mavg
+
+puts "Average on master:     \e[36m#{mavg}\e[39m"
+puts "Average on threadsafe: \e[36m#{tavg}\e[39m"
+puts "Difference:            \e[36m#{tavg - mavg}\e[39m"
