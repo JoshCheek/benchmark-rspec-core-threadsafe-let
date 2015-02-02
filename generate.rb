@@ -13,7 +13,8 @@ Node = Struct.new(:depth, :variable_names, :children) do
 
     stream << "#{indentation}#{namespace}describe #{name.inspect} do\n"
     variable_names.each_with_index.each { |name, index|
-      stream << "#{indentation+'  '}let(:#{name}) { #{index} }\n"
+      value = (index == variable_names.length-1 ? index : 'super()' )
+      stream << "#{indentation+'  '}let(:#{name}) { #{value} }\n"
     }
     stream << "#{indentation}  example { #{variable_names.join '; '} }\n"
     children.each { |child| child.to_code stream }
@@ -40,24 +41,25 @@ outfile ||= $stdout
 
 tree(0, depth, next_variable_name, []).to_code(outfile)
 
+
 # >> RSpec.describe "0: " do
 # >>   example {  }
 # >>   describe "1: a" do
 # >>     let(:a) { 0 }
 # >>     example { a }
 # >>     describe "2: a, b" do
-# >>       let(:a) { 0 }
+# >>       let(:a) { super() }
 # >>       let(:b) { 1 }
 # >>       example { a; b }
 # >>     end
 # >>   end
-# >>   describe "1: c" do
-# >>     let(:c) { 0 }
-# >>     example { c }
-# >>     describe "2: c, d" do
-# >>       let(:c) { 0 }
+# >>   describe "1: a" do
+# >>     let(:a) { 0 }
+# >>     example { a }
+# >>     describe "2: a, d" do
+# >>       let(:a) { super() }
 # >>       let(:d) { 1 }
-# >>       example { c; d }
+# >>       example { a; d }
 # >>     end
 # >>   end
 # >> end
