@@ -16,3 +16,4 @@ rspec-rails
 rspec-support
 rspec
 spec_times
+Gemfile.lock
